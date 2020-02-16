@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+  <head>
+  <meta charset="utf-8">
+  <title>OpenLayers</title>
+  <meta name="viewport" content="initial-scale=1.0, user-scalable=no, width=device-width">
+  <link rel="stylesheet" href="style.css">
+  </head>
+  <body>
+    <form class="radio" id="layerControl">
+      <input class="rb" id="base" type="radio" name="radio-group" checked />
+      <label class="radio"><b><font color="orange">Terrain</font></b></label>
+      <br>
+      <input type="radio" name="radio-group" id="sat" class="rb"     />
+      <label class="radio"><b><font color="orange">Satellit</font></b></label>
+      <br>
+    </form>
+    <div id="map" class="fullscreen">
+    </div>
+    <div class="arrow_box" id="popup-container">
+    <div id="popup-content"></div>
+       <div id="popup" class="ol-popup">
+      <a href="#" id="popup-closer" class="ol-popup-closer"></a>
+      <div id="popup-content1"></div>
+    </div>
+    </div>
+  </body>
+  </html>
