@@ -8,7 +8,6 @@ import VectorLayer from 'ol/layer/Vector';
 import Vector from 'ol/source/Vector';
 import GeoJSON from 'ol/format/GeoJSON';
 import Stroke from 'ol/style/Stroke';
-import Circle from 'ol/style/Circle';
 import Fill from 'ol/style/Fill';
 import * as olProj from 'ol/proj';
 import {toLonLat} from 'ol/proj';
@@ -16,24 +15,22 @@ import {Icon, Style} from 'ol/style';
 import Overlay from 'ol/Overlay';
 import sync from 'ol-hashed';
 import XYZ from 'ol/source/XYZ';
+import Feature from 'ol/Feature';
+import {fromLonLat} from 'ol/proj';
+import circular from 'ol/geom/Polygon';
+import Point from 'ol/geom/Point';
+import Control from 'ol/control/Control';
 
 const container = document.getElementById('popup');
-const content = document.getElementById('popup-content1');
 const closer = document.getElementById('popup-closer');
 
 const map = new Map({
   target: 'map',
   view: new View({
     center: olProj.fromLonLat([15.52, 48.18]),
-    zoom: 14
+    zoom: 12
   })
 });
-/* map.addLayer(new TileLayer({
-  source: new Stamen({
-    layer: 'terrain'
-  })
-}));
- */
 
 sync(map);
 
@@ -52,6 +49,7 @@ const baseLayer = new TileLayer({
   })
 });
 map.addLayer(baseLayer);
+
 
 const sat = document.getElementById('sat');
 sat.addEventListener('click', function(event) {
@@ -190,6 +188,7 @@ gruenraum.setStyle(new Style({
     src: 'data/gruenraum.png'
   })
 }));
+
 
 /* const verkehrStyle = new Style({ //Gestaltung der Feedbacks zum Thema "Verkehr"
   image: new Icon({
@@ -402,6 +401,7 @@ gemaprima.setStyle(function(feature) {
   } else if (feedbackCount.get(8) > feedbackCount.get(7) && feedbackCount.get(8) > feedbackCount.get(6)) {
     fillColor = 'rgba(34, 139, 34, 0.4)';
   } else {
+    // eslint-disable-next-line no-console
     console.log('6=' + feedbackCount.get(6) + ' ' + '7=' + feedbackCount.get(7) + ' ' + '8=' + feedbackCount.get(8));
     fillColor = 'rgba(176, 196, 222, 0.4)';
   }
@@ -446,3 +446,71 @@ gemaprima.setStyle(function(feature) {
   });
 }); */
 map.dispatchEvent('change:size');
+
+// Koordinatensuche
+
+// eslint-disable-next-line no-undef
+const geocoder = new Geocoder('nominatim',
+  {
+    provider: 'mapquest',
+    key: 'ACfOgoF7JNAG57XQv72HzpCEoSo8hQmZ',
+    lang: 'de-AT',
+    placholder: 'Suchen...',
+    targetType: 'glass-button',
+    limit: 6,
+    keepOpen: false
+  });
+map.addControl(geocoder);
+geocoder.on('addresschosen', function(evt) {
+  const feature = evt.feature,
+      coord = evt.coordinate,
+      address = evt.address;
+  geocoder.getSource().clear();
+  geocoder.getSource().addFeature(feature);
+  // eslint-disable-next-line no-undef
+  content.innerHTML = '<p>' + address.formatted + '</p>';
+  overlay.setPosition(coord);
+});
+geocoder.on('addresschosen', function(evt) {
+  // eslint-disable-next-line no-console
+  console.info(evt);
+  
+});
+
+//GPS Location
+const GPSsource = new Vector();
+const GPSlayer = new VectorLayer({
+  source: GPSsource
+});
+map.addLayer(GPSlayer);
+
+
+navigator.geolocation.watchPosition(function(pos) {
+  const coords = [pos.coords.longitude, pos.coords.latitude];
+  const accuracy = circular(coords, pos.coords.accuracy);
+  GPSsource.clear(true);
+  GPSsource.addFeatures([
+    new Feature(accuracy.transform('EPSG:4326', map.getView().getProjection())),
+    new Feature(new Point(fromLonLat(coords)))
+  ]);
+}, function(error) {
+  alert(`ERROR: ${error.message}`);
+}, {
+  enableHighAccuracy: true
+});
+
+const locate = document.createElement('div');
+locate.className = 'ol-control ol-unselectable locate';
+locate.innerHTML = '<button title="Locate me">◎</button>';
+locate.addEventListener('click', function() {
+  if (!GPSsource.isEmpty()) {
+    map.getView().fit(GPSsource.getExtent(), {
+      maxZoom: 18,
+      duration: 500
+    });
+  }
+});
+map.addControl(new Control({
+  element: locate
+}));
+
