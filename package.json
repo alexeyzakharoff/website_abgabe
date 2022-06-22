@@ -5,7 +5,7 @@
   "private": true,
   "main": "main.js",
   "dependencies": {
-    "async": "^3.1.0",
+    "async": "^3.2.2",
     "colormap": "2.3.1",
     "geojson-merge": "^0.3.0",
     "leaflet": "^1.6.0",
